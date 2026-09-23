@@ -136,24 +136,20 @@ Then:
 ```
 Capture the value as `:mon` (e.g. `Sep 25`).
 
-## Part C — Query the module "INP: Input T5 Forecast" to get the Forecast Submission status
+## Part C — Get Forecast submission status from the module "INP: Input T5 Forecast" and the line item Submission Status
 
-### Step 5 — Fetch the sheet schema
-```json
-{
-  "included_objects": { "INP: Input T5 Forecast": ["Forecast Submitted?",  "CF: Forecast Call Submission Status Manager", "Is Current Quarter Months?"] }
-}
-```
-Note the exact dimension column names returned (e.g. the hierarchy-level dimension) — **every dimension column must be sliced with `=` or constrained with `<dim>_is_leaf = TRUE`**.
-
-### Step 6 — Query: Forecast submission in the current period
-Run **one query per team member** (the SQL engine rejects `IN (...)` on some columns; if `owner IN (...)` fails, loop per member), or a single query with OR conditions on the measure column when supported:
-```json
-{
-  "included_objects": { "INP: Input T5 Forecast": ["Submission status", "CF: Forecast Call Submission Status Manager"] },
-"query": "SELECT <hierarchy_dim_co>, \"Submission status\", \"CF: Forecast Call Submission Status Manager\", \"Is Current Quarter Months?\"  FROM \"template sales forecasting.INP: Input T5 Forecast\" WHERE <hierarchy_dim_col> = :t5_member_or_leaf_constraint AND Is Current Quarter Months? = True",
-  "parameters": { "owner": "Frazier, Tom", "mon": "Sep 25" }
-}
+### Step 6 — Query: Forecast submission status in the current period
+Run **one query per team member** 
+```bash
+explain_cell(
+  Module: "INP: Input T5 Forecast"
+  Line Item: "Submission Status"
+  Slice: {
+    "Employee to T5": team member,
+    "T5" : "T5",
+    "Time": :mon
+    }
+)
 ```
 Rules:
 - `Submission status` and `CF: Forecast Call Submission Status Manager` are **line items (measures)**, so they may be filtered directly by value in WHERE; if a bare comparison is rejected, wrap with `COALESCE(...)`.
