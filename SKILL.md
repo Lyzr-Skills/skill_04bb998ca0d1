@@ -1,6 +1,7 @@
 # SKILL: Team Opportunity Filter — Current Period - Forecast Submission Status
 
 ## Description
+Use this skill whenever the user asks to "check the status of the Forecast Submission" from its users.
 Automates a three-part chained workflow for the Anaplan **Template Sales Forecasting** model:
 
 1. **Part A — Get My Team**: Retrieves the members of the user's team, defined as the leaf employees in the list **"Employee to Sub Region T5"** (the dimension of the module **"INP: Input T5 Forecast"**).
@@ -8,8 +9,6 @@ Automates a three-part chained workflow for the Anaplan **Template Sales Forecas
 3. **Part C — Filter Forecast Submission values (downstream)**: Filters the module **"INP: Input T5 Forecast"** to Employee where:
    - the line item **"Opportunity Owner"** equals any member of the team from Part A, **AND**
    - the data is **relevant to the current Month** from Part B (i.e. **"Is Current Quarter Months?r"** = true).
-
-Use this skill whenever the user asks to "check the status of the Forecast Submission" from its users.
 
 ## Model Context
 | Property | Value |
@@ -151,23 +150,20 @@ Note the exact dimension column names returned (e.g. the hierarchy-level dimensi
 Run **one query per team member** (the SQL engine rejects `IN (...)` on some columns; if `owner IN (...)` fails, loop per member), or a single query with OR conditions on the measure column when supported:
 ```json
 {
-  "included_objects": { "INP: Input T5 Forecast": ["Forecast Submitted?", "CF: Forecast Call Submission Status Manager"] },
-"query": "SELECT <hierarchy_dim_co>, \"Forecast Submitted?\", \"stage\", \"CF: Forecast Call Submission Status Manager\", \"Is Current Quarter Months?\"  FROM \"template sales forecasting.INP: Input T5 Forecast\" WHERE <hierarchy_dim_col> = :t5_member_or_leaf_constraint AND \"<period_dim_col>\" = :mon AND Is Current Quarter Months? = True",
+  "included_objects": { "INP: Input T5 Forecast": ["Submission status", "CF: Forecast Call Submission Status Manager"] },
+"query": "SELECT <hierarchy_dim_co>, \"Submission status\", \"CF: Forecast Call Submission Status Manager\", \"Is Current Quarter Months?\"  FROM \"template sales forecasting.INP: Input T5 Forecast\" WHERE <hierarchy_dim_col> = :t5_member_or_leaf_constraint AND Is Current Quarter Months? = True",
   "parameters": { "owner": "Frazier, Tom", "in": "✔️", "mon": "Sep 25" }
 }
 ```
 Rules:
-- `Forecast Submitted?` and `CF: Forecast Call Submission Status Manager` are **line items (measures)**, so they may be filtered directly by value in WHERE; if a bare comparison is rejected, wrap with `COALESCE(...)`.
+- `Submission status` and `CF: Forecast Call Submission Status Manager` are **line items (measures)**, so they may be filtered directly by value in WHERE; if a bare comparison is rejected, wrap with `COALESCE(...)`.
 - Prefer slicing the hierarchy dimension to the **T5 level** to avoid duplicate rows per opportunity; otherwise deduplicate by opportunity name in post-processing.
 
 
 ### Step 7 — Aggregate and present
 Produce:
 1. **Team roster** (Part A) with count.
-2. **Summary by owner**: total opps, Won (count + NNACV), Open = Commit/Upside/Pipeline (count + NNACV), Lost/Omitted.
-3. **Open-deal detail table** (Commit first, then Upside/Pipeline by NNACV desc): Owner, Opportunity, Stage, Forecast Category, NNACV ($k), Close Date, In Forecast?.
-4. **Key takeaways**: which deals could bridge the current-quarter gap to quota (chain with the "Get Current Period & Forecast-vs-Quota Gap Analysis" skill if the user also asks about the gap), data-hygiene flags (inconsistent category/close date across hierarchy levels), and team members owning zero opportunities.
-5. Offer to export the filtered list (CSV/XLSX) via the sandbox tools.
+2. **Summary by owner**: Forecast Submission Status
 
 ---
 
