@@ -152,7 +152,7 @@ Run **one query per team member** (the SQL engine rejects `IN (...)` on some col
 {
   "included_objects": { "INP: Input T5 Forecast": ["Submission status", "CF: Forecast Call Submission Status Manager"] },
 "query": "SELECT <hierarchy_dim_co>, \"Submission status\", \"CF: Forecast Call Submission Status Manager\", \"Is Current Quarter Months?\"  FROM \"template sales forecasting.INP: Input T5 Forecast\" WHERE <hierarchy_dim_col> = :t5_member_or_leaf_constraint AND Is Current Quarter Months? = True",
-  "parameters": { "owner": "Frazier, Tom", "in": "✔️", "mon": "Sep 25" }
+  "parameters": { "owner": "Frazier, Tom", "mon": "Sep 25" }
 }
 ```
 Rules:
@@ -171,4 +171,3 @@ Produce:
 - **Never invent Anaplan object names** — if any name above fails, re-verify with `catalog_modules(name_contains: ...)` / `catalog_line_items(module_id: ...)` and use the exact returned names.
 - `included_objects` is REQUIRED and must be identical on both `sql_schema` and `sql_query`.
 - **SQL slicing rule**: every dimension column must be sliced (`=`) or leaf-constrained (`<dim>_is_leaf = TRUE`); `IN (...)` on dimension columns is rejected — loop one query per value instead.
-- `Current Quarter` and `Final Close Quarter` are text values (e.g. `Q3 FY26`) — compare as strings, not as native Time periods.
